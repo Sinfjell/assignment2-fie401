@@ -12,7 +12,7 @@ require(tidyverse)
 
 # Load the data
 data <- read.csv("SVI.csv")
-date_original <- read.csv("SVI.csv")
+data_original <- read.csv("SVI.csv")
 
 # Remove missing observations and format date
 data <- na.omit(data)
@@ -20,6 +20,12 @@ data$date <- as.Date(data$date, format="%d%b%Y")
 # Declare the dataset to be a panel data
 data <- pdata.frame(data, index = c("ticker","date"))
 
+# How many rows were removed? 
+original_rows <- nrow(data_original)
+cleaned_rows <- nrow(data)
+rows_removed <- original_rows - cleaned_rows
+print(paste("Original dataset is", original_rows, "rows long, while this dataset is",
+            cleaned_rows, "rows long. Meaning", rows_removed, "rows were removed."))
 
 
 # Task 1 ------------------------------------------------------------------
@@ -59,9 +65,9 @@ predicted_vector <- as.vector(predict(homoscedastic_model, data))
 
 # Plotting the graph
 plot(RET_vector, ln_SVI_vector,
-     xlab = "RET",
-     ylab = "ln(1 + SVI)",
-     main = "Plot with Predictions from the Model",
+     xlab = "Stock returns",
+     ylab = "Log-adjusted Google Searches",
+     main = "Google Searches based on the ticker returns",
      pch = 20)
 points(RET_vector, predicted_vector, col = "blue", pch = 20)  # Adding predicted points 
 
@@ -124,6 +130,7 @@ data$x_res <- residuals(fit_2)
 # Step 3: Regress y_res on x_res, save predicted values
 fit_3 <- lm(y_res ~ x_res, data = data)
 data$y_res_hat <- predict(fit_3, data)
+summary(fit_3)
 
 
 # Step 4: Make a scatterplot
@@ -131,8 +138,8 @@ x_res_vector <- as.vector(data$x_res)
 y_res_vector <- as.vector(data$y_res)
 
 plot(x_res_vector, y_res_vector,
-     xlab = "x_res",
-     ylab = "y_res",
+     xlab = "Rediuals of Stock Return",
+     ylab = "Residuals of Google Search",
      main = "Scatterplot with Predicted Values",
      pch = 20)
 
