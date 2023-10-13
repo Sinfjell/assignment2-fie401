@@ -9,12 +9,14 @@ require(tidyverse)
 
 # Load the data
 data <- read.csv("SVI.csv")
+date_original <- read.csv("SVI.csv")
 
 # Remove missing observations and format date
 data <- na.omit(data)
 data$date <- as.Date(data$date, format="%d%b%Y")
 # Declare the dataset to be a panel data
 data <- pdata.frame(data, index = c("ticker","date"))
+
 
 
 # Task 1 ------------------------------------------------------------------
@@ -39,7 +41,7 @@ stargazer(homoscedastic_model, homoscedastic_model, homoscedastic_model,
           model.names = FALSE,
           omit.stat = "all",
           column.labels = c("Homoskedastic", "Heteroskedasticity-Corrected", "Stock-Clustered"),
-          type = "text")
+          type = "text", report = "vc*t")
 
 # Plot
 # Preparing predictions from the model
@@ -56,9 +58,7 @@ plot(RET_vector, ln_SVI_vector,
      ylab = "ln(1 + SVI)",
      main = "Plot with Predictions from the Model",
      pch = 20)
-abline(homoscedastic_model, col = "red")  # Adding regression line
 points(RET_vector, predicted_vector, col = "blue", pch = 20)  # Adding predicted points 
-
 
 # Task 2 ------------------------------------------------------------------
 # Prepare data for regression analysis
@@ -101,7 +101,7 @@ stargazer(model_1, model_2, model_3,
           model.names = FALSE,
           omit.stat = "all",
           column.labels = c("Model 1", "Model 2", "Model 3"),
-          type = "text")
+          type = "text", report = "vc*t")
 
 # Visualization for Model 2
 
@@ -162,6 +162,6 @@ stargazer(model_1_fe, model_2_fe, model_3_fe,
           model.names = FALSE,
           omit.stat = "all",
           column.labels = c("Model 1 (Stock FE)", "Model 2 (Day FE)", "Model 3 (Stock & Day FE)"),
-          type = "text")
+          type = "text", report = "vc*t")
 
 
