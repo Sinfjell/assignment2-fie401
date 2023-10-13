@@ -168,7 +168,6 @@ clustered_se_model_2 <- coeftest(model_2_fe, vcov = vcovHC(model_2_fe, cluster =
 # which led to a loading issue. The `felm` function facilitates the inclusion of two-way fixed effects seamlessly and also 
 # allows for the computation of heteroskedasticity-robust standard errors, making it a suitable alternative for this analysis.
 
-
 # Load the lfe package
 library(lfe)
 
@@ -182,11 +181,14 @@ clustered_se_model_3 <- summary(model_3_fe, robust = TRUE)$coefficients[,2]
 stargazer(model_1_fe, model_2_fe, model_3_fe,
           se = list(clustered_se_model_1, clustered_se_model_2, clustered_se_model_3),
           title = "Regression Table with Controls and Fixed Effects",
-          header = FALSE,
+          header = TRUE,
           model.names = FALSE,
           omit.stat = "all",
           # add.lines = list(c('Stock FE', 'Yes', 'No', 'Yes'),
            #               c('Day FE', 'No', 'Yes', 'Yes')),
           #column.labels = c("Model 1 (Stock FE)", "Model 2 (Day FE)", "Model 3 (Stock & Day FE)"),
-          type = "text", report = "vc*t")
+          type = "text", report = "vc*t", 
+          covariate.labels = c("Stock returns (ABS)", "Index return (ABS)", 
+                               "Lagged Log of Google Searches"), 
+          dep.var.labels = "Log of Google Searches")
 
