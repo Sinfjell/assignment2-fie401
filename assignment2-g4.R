@@ -62,10 +62,13 @@ points(RET_vector, predicted_vector, col = "blue", pch = 20)  # Adding predicted
 
 # Task 2 ------------------------------------------------------------------
 # Prepare data for regression analysis
-data <- data %>%
+manipulated_data <- data %>%
   group_by(ticker) %>%
   arrange(date) %>%
   mutate(ln_SVI_lag = lag(log(1 + SVI), order_by = date))  # Compute ln(1 + SVI)_lag correctly using order_by
+
+# Convert the result back to a panel data object
+data <- pdata.frame(manipulated_data, index = c("ticker", "date"))
 
 # Handle missing values in ln_SVI_lag
 data <- data %>% filter(!is.na(ln_SVI_lag))
@@ -114,11 +117,51 @@ data$x_res <- residuals(fit_2)
 fit_3 <- lm(y_res ~ x_res, data = data)
 data$y_res_hat <- predict(fit_3, data)
 
+
 # Step 4: Make a scatterplot
-plot(data$x_res, data$y_res,
+x_res_vector <- as.vector(data$x_res)
+y_res_vector <- as.vector(data$y_res)
+
+plot(x_res_vector, y_res_vector,
      xlab = "x_res",
      ylab = "y_res",
      main = "Scatterplot with Predicted Values",
      pch = 20)
+
 abline(fit_3, col = "red")  # Adding regression line
 points(data$x_res, data$y_res_hat, col = "blue", pch = 20)  # Adding predicted points
+
+# Task 3 ------------------------------------------------------------------
+
+# Model 1: Stock Fixed Effects
+model_1_fe <- plm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag, data = data, model = "within", index = c("ticker"))
+
+# Cluster standard errors at stock level for Model 1
+clustered_se_model_1 <- sqrt(diag(vcovHC(model_1_fe, type = "sss", cluster = "group")))
+
+# Model 2: Day Fixed Effects
+model_2_fe <- plm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag, data = data, model = "within", index = c("date"))
+
+# Cluster standard errors at stock level for Model 2
+clustered_se_model_2 <- sqrt(diag(vcovHC(model_2_fe, type = "sss", cluster = "group")))
+
+# Model 3: Both Stock and Day Fixed Effects
+# To include both effects, we'll create a new interaction term for stock and day
+data$stock_date <- interaction(data$ticker, data$date)
+
+model_3_fe <- plm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag, data = data, model = "within", index = c("stock_date"))
+
+# Cluster standard errors at stock level for Model 3
+clustered_se_model_3 <- sqrt(diag(vcovHC(model_3_fe, type = "sss", cluster = "group")))
+
+# Create a regression table
+stargazer(model_1_fe, model_2_fe, model_3_fe,
+          se = list(clustered_se_model_1, clustered_se_model_2, clustered_se_model_3),
+          title = "Regression Table with Controls and Fixed Effects",
+          header = FALSE,
+          model.names = FALSE,
+          omit.stat = "all",
+          column.labels = c("Model 1 (Stock FE)", "Model 2 (Day FE)", "Model 3 (Stock & Day FE)"),
+          type = "text")
+
+
