@@ -160,10 +160,23 @@ model_2_fe <- plm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag, data = data, model
 clustered_se_model_2 <- coeftest(model_2_fe, vcov = vcovHC(model_2_fe, cluster = "group", type = "sss"))[, 2]
 
 # Model 3: Both Stock and Day Fixed Effects
-model_3_fe <- plm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag, data = data, model = "within", effect = "twoway")
+# Example using lm() for two-way fixed effects
+#model_3_fe <- plm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag, data = data, model = "within", effect = "twoway")
 
-# Cluster standard errors at stock level for Model 3
-clustered_se_model_3 <- coeftest(model_3_fe, vcov = vcovHC(model_3_fe, cluster = "group", type = "sss"))[, 2]
+# We are utilizing the `felm` function from the `lfe` package for Model 3 instead of the `plm` function from the `plm` package.
+# This is due to the encountered issue with `plm` when specifying `effect = "twoway"` for both stock and day fixed effects,
+# which led to a loading issue. The `felm` function facilitates the inclusion of two-way fixed effects seamlessly and also 
+# allows for the computation of heteroskedasticity-robust standard errors, making it a suitable alternative for this analysis.
+
+
+# Load the lfe package
+library(lfe)
+
+# Estimate your model using felm
+model_3_fe <- felm(ln_SVI ~ Abs_RET + Abs_vwretd + ln_SVI_lag | factor(ticker) + factor(date), data = data)
+
+# Obtain clustered standard errors
+clustered_se_model_3 <- summary(model_3_fe, robust = TRUE)$coefficients[,2]
 
 # Create a regression table
 stargazer(model_1_fe, model_2_fe, model_3_fe,
@@ -172,8 +185,8 @@ stargazer(model_1_fe, model_2_fe, model_3_fe,
           header = FALSE,
           model.names = FALSE,
           omit.stat = "all",
-          add.lines = list(c('Stock FE', 'Yes', 'No', 'Yes'),
-                           c('Day FE', 'No', 'Yes', 'Yes')),
-          column.labels = c("Model 1 (Stock FE)", "Model 2 (Day FE)", "Model 3 (Stock & Day FE)"),
+          # add.lines = list(c('Stock FE', 'Yes', 'No', 'Yes'),
+           #               c('Day FE', 'No', 'Yes', 'Yes')),
+          #column.labels = c("Model 1 (Stock FE)", "Model 2 (Day FE)", "Model 3 (Stock & Day FE)"),
           type = "text", report = "vc*t")
 
